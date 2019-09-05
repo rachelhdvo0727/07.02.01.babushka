@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Babushka restaurant</title>
+    <style>
+        img {
+            width: 100%;
+        }
+
+        article:nth-child(odd) {
+            background-color: grey;
+        }
+
+        nav {
+            text-align: center;
+            margin: 2vw;
+        }
+
+        #indhold {
+            display: inline-grid;
+            grid-gap: 3vw;
+            margin: 5vw;
+        }
+
+        article,
+        .box {
+            padding: 1vw;
+        }
+
+        .valgt {
+            background-color: orange;
+        }
+
+        #popup {
+            position: fixed;
+            top: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: purple;
+            display: none;
+        }
+
+        #enret {
+            width: 70vw;
+            min-height: 50vh;
+            padding: 3vw;
+            margin: 4rem auto;
+            background-color: beige;
+        }
+
+        .luk {
+            position: fixed;
+            right: 0;
+            font-size: 2rem;
+        }
+
+        footer {
+            display: inline-grid;
+            margin: auto 0;
+            background-color: grey;
+            grid-template-columns: repeat(4, 2fr);
+            width: 100%;
+        }
+
+        .box p {
+            color: white;
+            font-family: sans-serif;
+            font-size: 2vw;
+        }
+
+        .adresse {
+            grid-column-start: 2;
+        }
+
+        .openinghours {
+            grid-column-start: 3;
+        }
+
+        @media screen and (min-width:600px) {
+            #indhold {
+                grid-template-columns: 1fr;
+            }
+
+            .box p {
+                font-size: 1.2vw;
+            }
+        }
+
+        @media screen and (min-width:780px) {
+            #indhold {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+    </style>
+</head>
+
+<body>
+    <div id="popup">
+        <button class="luk">X</button>
+        <section id="enret">
+            <article class="enRetview">
+                <img src="" alt="">
+                <h2></h2>
+                <p class="lang"></p>
+                <p class="pris"></p>
+            </article>
+        </section>
+    </div>
+
+    <section id="splash">splash</section>
+    <nav>
+        <button class="filter valgt" data-kategori="alle">Alle</button>
+        <button class="filter" data-kategori="forretter">Forretter</button>
+        <button class="filter" data-kategori="hovedretter">Hovedretter</button>
+        <button class="filter" data-kategori="desserter">Desserter</button>
+        <button class="filter" data-kategori="drikkevarer">Drikkevarer</button>
+    </nav>
+    <h1>Menu</h1>
+    <section id="indhold"></section>
+    <template>
+        <article>
+            <img src="" alt="">
+            <h2></h2>
+            <p class="text"></p>
+            <p class="pris"></p>
+        </article>
+    </template>
+    <footer>
+        <div class="box adresse">
+            <p>Adresse:<br>Grønnegade 9<br>1234 København K</p>
+        </div>
+        <div class="box openinghours">
+            <p>Åbeningstider: Mandag - Fredag 10:30 - 22:00</p>
+            <p>Lørdag 12:00 - 23:00</p>
+        </div>
+    </footer>
+    <script>
+        let retter;
+        let filter = "alle";
+        const menuList = document.querySelector("#indhold");
+        const retTemplate = document.querySelector("template");
+
+        document.addEventListener("DOMContentLoaded", hentJson);
+
+        async function hentJson() {
+            const minJson = await fetch("https://spreadsheets.google.com/feeds/list/17Dd7DvkPaFamNUdUKlrFgnH6POvBJXac7qyiS6zNRw0/od6/public/values?alt=json");
+
+            retter = await minJson.json();
+            console.log(retter);
+
+            visMenuListen();
+            clickKnappene();
+        }
+
+        function visMenuListen() {
+            menuList.innerHTML = "";
+
+            retter.feed.entry.forEach(ret => {
+                if (filter == "alle" || filter == ret.gsx$kategori.$t) {
+                    let klon = retTemplate.cloneNode(true).content;
+
+                    klon.querySelector("img").src = "imgs/small/" + ret.gsx$billede.$t + "-sm.jpg";
+                    klon.querySelector("h2").textContent = ret.gsx$navn.$t;
+                    klon.querySelector(".text").textContent = ret.gsx$kort.$t;
+                    klon.querySelector(".pris").textContent = `Pris: ${ret.gsx$pris.$t},- kr.`;
+
+                    menuList.appendChild(klon);
+
+                    menuList.lastElementChild.addEventListener("click", () => {
+                        visEnret(ret)
+                    });
+                }
+            })
+        }
+
+        function visEnret(ret) {
+            document.querySelector("#popup").style.display = "block";
+            document.querySelector("#popup").addEventListener("click", lukNed);
+            document.querySelector(".enRetview img").src = "imgs/large/" + ret.gsx$billede.$t + ".jpg";
+            document.querySelector(".enRetview h2").textContent = ret.gsx$navn.$t;
+            document.querySelector(".enRetview .lang").textContent = ret.gsx$lang.$t;
+            document.querySelector(".enRetview .pris").textContent = `Pris: ${ret.gsx$pris.$t},- kr.`;
+        }
+
+        function lukNed() {
+            document.querySelector("#popup").style.display = "none";
+        }
+
+        function clickKnappene() {
+            document.querySelectorAll(".filter").forEach(elm => {
+                elm.addEventListener("click", filtrering);
+            })
+        }
+
+        function filtrering() {
+            filter = this.dataset.kategori;
+
+            document.querySelectorAll(".filter").forEach(elm => {
+                elm.classList.remove("valgt");
+            })
+            this.classList.add("valgt");
+
+            visMenuListen();
+        }
+
+    </script>
+</body>
+
+</html>
